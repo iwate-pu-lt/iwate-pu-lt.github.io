@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+</head>
+<body>
+    <h1>岩手県立大学 LT会</h1>
+
+    <div id="LTs"></div>
+    
+
+    <script src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        const config = {
+            apiKey: "AIzaSyBZ2NPyaGhtepFuUWk3ezG_XghyzvO1lAA",
+            authDomain: "ipu-lt.firebaseapp.com",
+            databaseURL: "https://ipu-lt.firebaseio.com",
+            projectId: "ipu-lt",
+            storageBucket: "ipu-lt.appspot.com",
+            messagingSenderId: "1026291360735"
+        };
+        firebase.initializeApp(config);
+
+        const db = firebase.firestore();
+
+        db.collection("lt").doc("201904").set({
+            title: "ReiwaZero 1st Kendai LT",
+            date: '2019/04/03 Wed',
+            place: '岩手県立大学 メディアセンターB棟 語学学習室4'
+        });
+        db.collection("lt").doc("201904").collection("slides").doc('TaikiFnit').set({name: 'TaikiFnit', title: 'THE TEAM', url: 'https://google.com'}, {merge: true});
+
+        db.collection("lt").get().then(lts_snapshot => {
+            lts_snapshot.forEach(lt_doc => {
+                const lt = lt_doc.data();
+                const dom_slide_id = `${lt_doc.id}_slides`;
+
+                const lt_html = `
+                    <section>
+                        <h2>${lt.title}</h2>
+                        <ul>
+                            <li>開催日: ${lt.date}</li>
+                            <li>開催場所: ${lt.place}</li>
+                        </ul>
+                        <h3>発表者リスト</h3>
+                            <ul id="${dom_slide_id}">
+                        </ul>
+                    </section>
+                `;
+
+                document.getElementById('LTs').innerHTML = lt_html;
+
+                db.collection('lt').doc(lt_doc.id).collection('slides').get().then(slides_snapshot => {
+                    slides_snapshot.forEach(slide_doc => {
+                        const slide = slide_doc.data();
+                        const slide_html =  `
+                            <li>
+                                <dl>
+                                    <dt>Presentor:</dt>
+                                    <dd>${slide.name}</dd>
+                                    <dt>Title: </dt>
+                                    <dd>${slide.title}</dd>
+                                    <dt>Slide URL:</dt>
+                                    <dd>${slide.url}</dd>
+                                </dl>
+                            </li>
+                        `;
+
+                        document.getElementById(dom_slide_id).innerHTML = slide_html;
+                    });
+                });
+            });
+
+        }).catch(function(error) {
+            console.log("Error getting document:", error);
+        });
+    </script>
+</body>
+</html>
