@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>岩手県立大学 LT会</title>
     <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
     <style>
         html, body {
@@ -128,49 +128,35 @@
         var uiConfig = {
             callbacks: {
                 signInSuccessWithAuthResult: function(authResult, redirectUrl) {
-                // User successfully signed in.
-                // Return type determines whether we continue the redirect automatically
-                // or whether we leave that to developer to handle.
-                console.log(authResult);
-                console.log(redirectUrl);
-                return true;
+                    return true;
                 },
                 uiShown: function() {
-                // The widget is rendered.
-                // Hide the loader.
-                document.getElementById('loader').style.display = 'none';
+                    document.getElementById('loader').style.display = 'none';
                 }
             },
-            // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
             signInFlow: 'popup',
             signInSuccessUrl: '/',
             signInOptions: [
-                // Leave the lines as is for the providers you want to offer your users.
                 firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-            ],
-            // Terms of service url.
-            // tosUrl: '<your-tos-url>',
-            // Privacy policy url.
-            // privacyPolicyUrl: '<your-privacy-policy-url>'
-            };
+            ]
+        };
         ui.start('#firebaseui-auth-container', uiConfig);
 
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
                 document.getElementById('firebaseui-auth-container').style.display = 'none';
             } else {
+                document.getElementById('firebaseui-auth-container').style.display = 'block';
+                const buttons = document.getElementsByClassName('lt_apply_buttons');
+                for (const i = 0; i < buttons.length; i++) {
+                    buttons[i].style.display = 'none';
+                }
             }
         });
 
         const db = firebase.firestore();
 
-        db.collection("lt").doc("201904").set({
-            title: "ReiwaZero 1st Kendai LT",
-            date: '2019/04/03 Wed',
-            place: '岩手県立大学 メディアセンターB棟 語学学習室4'
-        });
-
-        db.collection("lt").onSnapshot(lts_snapshot => {
+        db.collection("lt").orderBy('created_at', 'desc').onSnapshot(lts_snapshot => {
             document.getElementById('LTs').textContent = null;
 
             lts_snapshot.forEach(lt_doc => {
@@ -189,7 +175,7 @@
                         </ul>
 
                         <div id="lt_${lt_doc.id}_apply_form_area"></div>
-                        <button type="button" id="lt_${lt_doc.id}_apply_button" onclick="onBeginApplyPresenter('${lt_doc.id}')">リストに登録する</button>
+                        <button type="button" class="lt_apply_buttons" id="lt_${lt_doc.id}_apply_button" onclick="onBeginApplyPresenter('${lt_doc.id}')">リストに登録する</button>
                     </section>
                 `;
 
@@ -200,8 +186,6 @@
 
                     slides_snapshot.forEach(slide_doc => {
                         const slide = slide_doc.data();
-                        console.log('slide.doc');
-                        console.log(slide_doc);
                         const slide_html =  `
                             <li class="card">
                                 <a href="${slide.url}" class="whole_card_link">
@@ -220,6 +204,20 @@
                             fetchOGPImage(slide.url, slide.title, `${slide_doc.id}_img`)
                         } catch(e) {
                             console.log(e);
+                        }
+                    });
+
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (user) {
+                            const buttons = document.getElementsByClassName('lt_apply_buttons');
+                            for (const i = 0; i < buttons.length; i++) {
+                                buttons[i].style.display = 'inline';
+                            }
+                        } else {
+                            const buttons = document.getElementsByClassName('lt_apply_buttons');
+                            for (const i = 0; i < buttons.length; i++) {
+                                buttons[i].style.display = 'none';
+                            }
                         }
                     });
                 });
@@ -276,11 +274,6 @@
 
                     const og_image = getMeta({from: el, by: 'og:image'});
                     document.getElementById(dom_id).innerHTML = `<img class="card slide_img" src="${og_image}" alt="${title}"></img>`;
-            console.log('start fetch');
-            console.log(url);
-            console.log(title);
-            console.log(dom_id);
-                    console.log(og_image);
                 }
             });
             request.send();
@@ -306,6 +299,51 @@
 
             return '';
         }
+
+        function createNewLT() {
+            db.collection("lt").doc(document.getElementById('create_lt_uid').value).set({
+                title: document.getElementById('create_lt_title').value,
+                date: document.getElementById('create_lt_date').value,
+                place: document.getElementById('create_lt_place').value,
+                created_at: Date.now()
+            });
+        }
+
+        /* https://byuzensen.com/javascript-konami-command */
+        (function() {
+            var inputKey = [];
+            //38 = 上
+            //40 = 下
+            //37 = 左
+            //39 = 右
+            //66 = b
+            //65 = a
+            var konamiCommand = [38,38,40,40,37,39,37,39,66,65];
+
+            document.addEventListener('keyup', function(e) {
+            inputKey.push(e.keyCode);
+
+            if (inputKey.toString().indexOf(konamiCommand) >= 0) {
+                inputKey = [];
+
+                const create_lt_html = `
+                    <form>
+                        <label>UniqueID: <input id="create_lt_uid" name="create_lt_uid" placeholder="201904"></label>
+                        <label>Title: <input id="create_lt_title" name="create_lt_title"></label>
+                        <label>開催日: <input id="create_lt_date" name="create_lt_date"></label>
+                        <label>開催場所: <input id="create_lt_place" name="create_lt_place"></label>
+                        <button type="button" onclick="createNewLT()">Create New LT</button>
+                    </form>
+                `;
+
+
+                const lt_create_form_div = document.createElement("div");
+                lt_create_form_div.id = 'lt_create_form';
+                document.getElementById('LTs').prepend(lt_create_form_div);
+                document.getElementById('lt_create_form').innerHTML = create_lt_html;
+            }
+            });
+            }());
     </script>
 </body>
 </html>
