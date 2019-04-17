@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,18 +8,28 @@
     <title>岩手県立大学 LT会</title>
     <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
     <style>
-        html, body {
+        html,
+        body {
             color: #212121;
             text-align: center;
         }
-        h1,h2,h3,h4,h5,h6 {
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             color: #424242;
         }
-        ul, li {
+
+        ul,
+        li {
             margin: 0;
             padding: 0;
             list-style: none;
         }
+
         img.photo_url {
             width: 44px;
             height: 44px;
@@ -66,7 +77,7 @@
 
         }
 
-        h4 span{
+        h4 span {
             margin: 0 20px;
             text-align: left;
         }
@@ -92,13 +103,14 @@
         }
 
         .card {
-            box-shadow: 0 5px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
             background-clip: border-box;
-            border: 0 solid rgba(54,53,55,0.125);
+            border: 0 solid rgba(54, 53, 55, 0.125);
             border-radius: 5px;
         }
     </style>
 </head>
+
 <body>
     <h1>岩手県立大学 LT会</h1>
 
@@ -108,7 +120,7 @@
     </div>
 
     <div id="LTs"></div>
-    
+
 
     <script src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
     <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
@@ -127,10 +139,10 @@
         var ui = new firebaseui.auth.AuthUI(firebase.auth());
         var uiConfig = {
             callbacks: {
-                signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                signInSuccessWithAuthResult: function (authResult, redirectUrl) {
                     return true;
                 },
-                uiShown: function() {
+                uiShown: function () {
                     document.getElementById('loader').style.display = 'none';
                 }
             },
@@ -142,7 +154,7 @@
         };
         ui.start('#firebaseui-auth-container', uiConfig);
 
-        firebase.auth().onAuthStateChanged(function(user) {
+        firebase.auth().onAuthStateChanged(function (user) {
             if (user) {
                 document.getElementById('firebaseui-auth-container').style.display = 'none';
             } else {
@@ -186,7 +198,7 @@
 
                     slides_snapshot.forEach(slide_doc => {
                         const slide = slide_doc.data();
-                        const slide_html =  `
+                        const slide_html = `
                             <li class="card">
                                 <a href="${slide.url}" class="whole_card_link">
                                 <section>
@@ -202,12 +214,12 @@
                         document.getElementById(dom_slide_id).innerHTML = document.getElementById(dom_slide_id).innerHTML + slide_html;
                         try {
                             fetchOGPImage(slide.url, slide.title, `${slide_doc.id}_img`)
-                        } catch(e) {
+                        } catch (e) {
                             console.log(e);
                         }
                     });
 
-                    firebase.auth().onAuthStateChanged(function(user) {
+                    firebase.auth().onAuthStateChanged(function (user) {
                         if (user) {
                             const buttons = document.getElementsByClassName('lt_apply_buttons');
                             for (const i = 0; i < buttons.length; i++) {
@@ -250,8 +262,8 @@
                         uid: user.uid
                     };
 
-                    db.collection("lt").doc(lt_id).collection("slides").doc().set({title: title, url: slide_url, presenter: {...user_info}}, {merge: true});
-                } 
+                    db.collection("lt").doc(lt_id).collection("slides").doc().set({ title: title, url: slide_url, presenter: { ...user_info } }, { merge: true });
+                }
             });
 
             document.getElementById(`lt_${lt_id}_apply_button`).style.display = 'inline';
@@ -272,7 +284,7 @@
                     var parser = new DOMParser()
                     var el = parser.parseFromString(html_text, "text/xml");
 
-                    const og_image = getMeta({from: el, by: 'og:image'});
+                    const og_image = getMeta({ from: el, by: 'og:image' });
                     document.getElementById(dom_id).innerHTML = `<img class="card slide_img" src="${og_image}" alt="${title}"></img>`;
                 }
             });
@@ -288,12 +300,12 @@
         }
 
         // ref: https://stackoverflow.com/questions/7524585/how-do-i-get-the-information-from-a-meta-tag-with-javascript
-        function getMeta({from: doc, by: name}) {
+        function getMeta({ from: doc, by: name }) {
             const metas = doc.getElementsByTagName('meta');
 
             for (let i = 0; i < metas.length; i++) {
                 if (metas[i].getAttribute('property') === name) {
-                return metas[i].getAttribute('content');
+                    return metas[i].getAttribute('content');
                 }
             }
 
@@ -310,7 +322,7 @@
         }
 
         /* https://byuzensen.com/javascript-konami-command */
-        (function() {
+        (function () {
             var inputKey = [];
             //38 = 上
             //40 = 下
@@ -318,15 +330,15 @@
             //39 = 右
             //66 = b
             //65 = a
-            var konamiCommand = [38,38,40,40,37,39,37,39,66,65];
+            var konamiCommand = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
 
-            document.addEventListener('keyup', function(e) {
-            inputKey.push(e.keyCode);
+            document.addEventListener('keyup', function (e) {
+                inputKey.push(e.keyCode);
 
-            if (inputKey.toString().indexOf(konamiCommand) >= 0) {
-                inputKey = [];
+                if (inputKey.toString().indexOf(konamiCommand) >= 0) {
+                    inputKey = [];
 
-                const create_lt_html = `
+                    const create_lt_html = `
                     <form>
                         <label>UniqueID: <input id="create_lt_uid" name="create_lt_uid" placeholder="201904"></label>
                         <label>Title: <input id="create_lt_title" name="create_lt_title"></label>
@@ -337,13 +349,14 @@
                 `;
 
 
-                const lt_create_form_div = document.createElement("div");
-                lt_create_form_div.id = 'lt_create_form';
-                document.getElementById('LTs').prepend(lt_create_form_div);
-                document.getElementById('lt_create_form').innerHTML = create_lt_html;
-            }
+                    const lt_create_form_div = document.createElement("div");
+                    lt_create_form_div.id = 'lt_create_form';
+                    document.getElementById('LTs').prepend(lt_create_form_div);
+                    document.getElementById('lt_create_form').innerHTML = create_lt_html;
+                }
             });
-            }());
+        }());
     </script>
 </body>
+
 </html>
