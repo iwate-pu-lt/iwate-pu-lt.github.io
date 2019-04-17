@@ -5,15 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+    <style>
+        html, body {
+            color: #212121;
+            text-align: center;
+        }
+        h1,h2,h3,h4,h5,h6 {
+            color: #424242;
+        }
+        ul, li {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        img.photo_url {
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+        }
 
+        a {
+            color: #1976D2;
+            text-decoration: none;
+        }
+
+        a:hover {
+            cursor: pointer;
+        }
+
+        section.lt {
+            margin-bottom: 120px;
+        }
+
+        ul.slides {
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        ul.slides li {
+            width: 90%;
+            max-width: 500px;
+            margin: 0 20px;
+            margin-bottom: 60px;
+            display: inline-block;
+        }
+
+        h4 {
+            display: flex;
+            width: 100%;
+            height: 262.5px;
+            background: #00838F;
+            border-radius: 5px;
+            color: white;
+            text-align: center;
+            word-break: break-all;
+            align-items: center;
+
+        }
+
+        h4 span{
+            margin: 0 20px;
+            text-align: left;
+        }
+
+        .slide_info {
+            padding-left: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .slide_info p {
+            margin: 0;
+            padding: 0;
+            margin-left: 15px;
+            color: #616161;
+        }
+
+        .slide_img {
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .card {
+            box-shadow: 0 5px 30px rgba(0,0,0,0.15);
+            background-clip: border-box;
+            border: 0 solid rgba(54,53,55,0.125);
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <h1>岩手県立大学 LT会</h1>
+
+    <div>
+        <div id="firebaseui-auth-container"></div>
+        <div id="loader">Loading...</div>
+    </div>
 
     <div id="LTs"></div>
     
 
     <script src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
+    <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
     <script>
         // Initialize Firebase
         const config = {
@@ -26,6 +124,44 @@
         };
         firebase.initializeApp(config);
 
+        var ui = new firebaseui.auth.AuthUI(firebase.auth());
+        var uiConfig = {
+            callbacks: {
+                signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                // User successfully signed in.
+                // Return type determines whether we continue the redirect automatically
+                // or whether we leave that to developer to handle.
+                console.log(authResult);
+                console.log(redirectUrl);
+                return true;
+                },
+                uiShown: function() {
+                // The widget is rendered.
+                // Hide the loader.
+                document.getElementById('loader').style.display = 'none';
+                }
+            },
+            // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
+            signInFlow: 'popup',
+            signInSuccessUrl: '/',
+            signInOptions: [
+                // Leave the lines as is for the providers you want to offer your users.
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            ],
+            // Terms of service url.
+            // tosUrl: '<your-tos-url>',
+            // Privacy policy url.
+            // privacyPolicyUrl: '<your-privacy-policy-url>'
+            };
+        ui.start('#firebaseui-auth-container', uiConfig);
+
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                document.getElementById('firebaseui-auth-container').style.display = 'none';
+            } else {
+            }
+        });
+
         const db = firebase.firestore();
 
         db.collection("lt").doc("201904").set({
@@ -33,52 +169,143 @@
             date: '2019/04/03 Wed',
             place: '岩手県立大学 メディアセンターB棟 語学学習室4'
         });
-        db.collection("lt").doc("201904").collection("slides").doc('TaikiFnit').set({name: 'TaikiFnit', title: 'THE TEAM', url: 'https://google.com'}, {merge: true});
 
-        db.collection("lt").get().then(lts_snapshot => {
+        db.collection("lt").onSnapshot(lts_snapshot => {
+            document.getElementById('LTs').textContent = null;
+
             lts_snapshot.forEach(lt_doc => {
                 const lt = lt_doc.data();
                 const dom_slide_id = `${lt_doc.id}_slides`;
 
                 const lt_html = `
-                    <section>
+                    <section class="lt" id="${lt_doc.id}">
                         <h2>${lt.title}</h2>
                         <ul>
                             <li>開催日: ${lt.date}</li>
                             <li>開催場所: ${lt.place}</li>
                         </ul>
-                        <h3>発表者リスト</h3>
-                            <ul id="${dom_slide_id}">
+                        <h3>発表リスト</h3>
+                        <ul id="${dom_slide_id}" class="slides">
                         </ul>
+
+                        <div id="lt_${lt_doc.id}_apply_form_area"></div>
+                        <button type="button" id="lt_${lt_doc.id}_apply_button" onclick="onBeginApplyPresenter('${lt_doc.id}')">リストに登録する</button>
                     </section>
                 `;
 
-                document.getElementById('LTs').innerHTML = lt_html;
+                document.getElementById('LTs').innerHTML = document.getElementById('LTs').innerHTML + lt_html;
 
-                db.collection('lt').doc(lt_doc.id).collection('slides').get().then(slides_snapshot => {
+                db.collection('lt').doc(lt_doc.id).collection('slides').onSnapshot(slides_snapshot => {
+                    document.getElementById(dom_slide_id).textContent = null;
+
                     slides_snapshot.forEach(slide_doc => {
                         const slide = slide_doc.data();
+                        console.log('slide.doc');
+                        console.log(slide_doc);
                         const slide_html =  `
-                            <li>
-                                <dl>
-                                    <dt>Presentor:</dt>
-                                    <dd>${slide.name}</dd>
-                                    <dt>Title: </dt>
-                                    <dd>${slide.title}</dd>
-                                    <dt>Slide URL:</dt>
-                                    <dd>${slide.url}</dd>
-                                </dl>
+                            <li class="card">
+                                <a href="${slide.url}" class="whole_card_link">
+                                <section>
+                                    <h4 id="${slide_doc.id}_img"><span>${slide.title}</span></h4>
+                                    <div class="slide_info">
+                                        <img src="${slide.presenter.photoURL}" class="photo_url"> <p>${slide.presenter.displayName}</p>
+                                    </div>
+                                </section>
+                                </a>
                             </li>
                         `;
 
-                        document.getElementById(dom_slide_id).innerHTML = slide_html;
+                        document.getElementById(dom_slide_id).innerHTML = document.getElementById(dom_slide_id).innerHTML + slide_html;
+                        try {
+                            fetchOGPImage(slide.url, slide.title, `${slide_doc.id}_img`)
+                        } catch(e) {
+                            console.log(e);
+                        }
                     });
                 });
             });
-
-        }).catch(function(error) {
-            console.log("Error getting document:", error);
         });
+
+        function onBeginApplyPresenter(lt_id) {
+            const apply_form_html = `
+                <form>
+                    <label>Title: <input name="apply_lt_${lt_id}_title_form" id="apply_lt_${lt_id}_title_form"></label>
+                    <label>Slide URL: <input name="apply_lt_${lt_id}_slide_url_form" id="apply_lt_${lt_id}_slide_url_form"></label>
+                    <button type="button" onclick="onCancelApplyPresenter('${lt_id}')">キャンセル</button><button type="button" onclick="onApplyPresenter('${lt_id}')">この内容で登録する</button>
+                </form>
+            `;
+
+            document.getElementById(`lt_${lt_id}_apply_button`).style.display = 'none';
+            document.getElementById(`lt_${lt_id}_apply_form_area`).innerHTML = apply_form_html;
+        }
+
+        function onApplyPresenter(lt_id) {
+            const title = document.getElementById(`apply_lt_${lt_id}_title_form`).value
+            const slide_url = document.getElementById(`apply_lt_${lt_id}_slide_url_form`).value
+
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    const user_info = {
+                        displayName: user.displayName,
+                        email: user.email,
+                        photoURL: user.photoURL,
+                        uid: user.uid
+                    };
+
+                    db.collection("lt").doc(lt_id).collection("slides").doc().set({title: title, url: slide_url, presenter: {...user_info}}, {merge: true});
+                } 
+            });
+
+            document.getElementById(`lt_${lt_id}_apply_button`).style.display = 'block';
+            document.getElementById(`lt_${lt_id}_apply_form_area`).textContent = null;
+        }
+
+        function onCancelApplyPresenter(lt_id) {
+            document.getElementById(`lt_${lt_id}_apply_button`).style.display = 'block';
+            document.getElementById(`lt_${lt_id}_apply_form_area`).textContent = null;
+        }
+
+        function fetchOGPImage(url, title, dom_id) {
+            const request = new XMLHttpRequest();
+            request.open("GET", url);
+            request.addEventListener("load", (event) => {
+                if (event.target.status == 200) {
+                    const html_text = event.target.responseText;
+                    var parser = new DOMParser()
+                    var el = parser.parseFromString(html_text, "text/xml");
+
+                    const og_image = getMeta({from: el, by: 'og:image'});
+                    document.getElementById(dom_id).innerHTML = `<img class="card slide_img" src="${og_image}" alt="${title}"></img>`;
+            console.log('start fetch');
+            console.log(url);
+            console.log(title);
+            console.log(dom_id);
+                    console.log(og_image);
+                }
+            });
+            request.send();
+        }
+
+        // ref: https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro/35385518#35385518
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); // Never return a text node of whitespace as the result
+            template.innerHTML = html;
+            return template;
+        }
+
+        // ref: https://stackoverflow.com/questions/7524585/how-do-i-get-the-information-from-a-meta-tag-with-javascript
+        function getMeta({from: doc, by: name}) {
+            const metas = doc.getElementsByTagName('meta');
+
+            for (let i = 0; i < metas.length; i++) {
+                if (metas[i].getAttribute('property') === name) {
+                return metas[i].getAttribute('content');
+                }
+            }
+
+            return '';
+        }
     </script>
 </body>
 </html>
