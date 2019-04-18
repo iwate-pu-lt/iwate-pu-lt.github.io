@@ -39,6 +39,22 @@
             text-align: center;
         }
 
+        .lt {
+            animation: fade_slide 2s ease 0s 1 alternate none running;
+        }
+
+        @keyframes fade_slide {
+            0% {
+                margin-top: 60px;
+                opacity: 0;
+            }
+
+            100% {
+                margin-top: 0;
+                opacity: 1;
+            }
+        }
+
         h1,
         h2,
         h3,
@@ -99,7 +115,6 @@
             text-align: center;
             word-break: break-all;
             align-items: center;
-
         }
 
         h4 span {
@@ -120,6 +135,20 @@
             padding: 0;
             margin-left: 15px;
             color: #616161;
+        }
+
+        .fade_img {
+            animation: fade_imgs 2s ease 0s 1 alternate none running;
+        }
+
+        @keyframes fade_imgs {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .slide_img {
@@ -308,7 +337,7 @@
                     var el = parser.parseFromString(html_text, "text/xml");
 
                     const og_image = getMeta({ from: el, by: 'og:image' });
-                    document.getElementById(dom_id).innerHTML = `<img class="card slide_img" src="${og_image}" alt="${title}"></img>`;
+                    document.getElementById(dom_id).innerHTML = `<img class="card slide_img fade_img" src="${og_image}" alt="${title}">`;
                 }
             });
             request.send();
