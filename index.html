@@ -32,6 +32,8 @@
     <meta name="twitter:image" content="https://iwate-pu-lt.github.io/screenshot.png">
 
     <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/solid.css" integrity="sha384-ioUrHig76ITq4aEJ67dHzTvqjsAP/7IzgwE7lgJcg2r7BRNGYSK0LwSmROzYtgzs" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/fontawesome.css" integrity="sha384-sri+NftO+0hcisDKgr287Y/1LVnInHJ1l+XC7+FOabmTTIK0HnE2ID+xxvJ21c5J" crossorigin="anonymous">
     <style>
         html,
         body {
@@ -130,12 +132,22 @@
             text-align: left;
         }
 
+        .slide_info_wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .slide_info {
             padding-left: 20px;
-            margin-bottom: 20px;
             display: flex;
             justify-content: flex-start;
             align-items: center;
+        }
+
+        .slide_info_wrap button {
+            padding-right: 20px;
         }
 
         .slide_info p {
@@ -169,6 +181,13 @@
             background-clip: border-box;
             border: 0 solid rgba(54, 53, 55, 0.125);
             border-radius: 5px;
+        }
+
+        .button-icon {
+            border: none;
+            background: none;
+            font-size: 18px;
+            color: #777;
         }
     </style>
 </head>
@@ -215,13 +234,13 @@
         ui.start('#firebaseui-auth-container', uiConfig);
 
         firebase.auth().onAuthStateChanged(function (user) {
+            const apply_buttons = document.getElementsByClassName('lt_apply_buttons');
             if (user) {
                 document.getElementById('firebaseui-auth-container').style.display = 'none';
             } else {
                 document.getElementById('firebaseui-auth-container').style.display = 'block';
-                const buttons = document.getElementsByClassName('lt_apply_buttons');
-                for (const i = 0; i < buttons.length; i++) {
-                    buttons[i].style.display = 'none';
+                for (const i = 0; i < apply_buttons.length; i++) {
+                    apply_buttons[i].style.display = 'none';
                 }
             }
         });
@@ -259,25 +278,37 @@
                     slides_snapshot.forEach(slide_doc => {
                         const slide = slide_doc.data();
 
-                        const slide_html = `
+                        firebase.auth().onAuthStateChanged(function (user) {
+                            const edit_button_html = user ? `
+                                <button class="button-icon edit-button" onclick="editSlides('${lt_doc.id}', '${slide_doc.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>` : '';
+
+                                const slide_html = `
                             <li class="card" id="${slide_doc.id}">
                                 <section>
-                                    <a href="${slide.url}" class="whole_card_link">
+                                    <a href="${slide.url}">
                                         <h4 id="${slide_doc.id}_img"><span>${slide.title}</span></h4>
                                     </a>
-                                    <div class="slide_info">
-                                        <img src="${slide.presenter.photoURL}" class="photo_url"> <p>${slide.presenter.displayName}</p> <button onclick="editSlides('${lt_doc.id}', '${slide_doc.id}')">編集する</button>
+                                    <div class="slide_info_wrap">
+                                        <div class="slide_info">
+                                            <img src="${slide.presenter.photoURL}" class="photo_url">
+                                            <p>${slide.presenter.displayName}</p>
+                                        </div>
+                                        ${edit_button_html}
                                     </div>
                                 </section>
                             </li>
-                        `;
+                            `;
 
-                        document.getElementById(dom_slide_id).innerHTML = document.getElementById(dom_slide_id).innerHTML + slide_html;
-                        try {
-                            fetchOGPImage(slide.url, slide.title, `${slide_doc.id}_img`)
-                        } catch (e) {
-                            console.log(e);
-                        }
+                            document.getElementById(dom_slide_id).innerHTML = document.getElementById(dom_slide_id).innerHTML + slide_html;
+
+                            try {
+                                fetchOGPImage(slide.url, slide.title, `${slide_doc.id}_img`)
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        });
                     });
 
                     firebase.auth().onAuthStateChanged(function (user) {
@@ -406,14 +437,11 @@
         }
 
         function onCompleteEditSlide(lt_id, slide_id) {
-            console.log(slide_id);
             const title = document.getElementById(`apply_lt_${slide_id}_title_form`);
             const url = document.getElementById(`apply_lt_${slide_id}_slide_url_form`);
 
             const slide_ref = db.collection('lt').doc(lt_id).collection('slides').doc(slide_id);
-            slide_ref.set({ title: title.value, url: url.value }, { merge: true }).then(() => {
-                console.log('success');
-            });
+            slide_ref.set({ title: title.value, url: url.value }, { merge: true });
         }
 
         function onCancelEditSlide(slide_id) {
