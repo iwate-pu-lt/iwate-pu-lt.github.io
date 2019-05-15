@@ -189,6 +189,13 @@
             font-size: 18px;
             color: #777;
         }
+
+        .remove-button {
+            color: #d32f2f;
+            background: none;
+            border: none;
+            margin: 20px;
+        }
     </style>
 </head>
 
@@ -457,11 +464,17 @@
                 const apply_form_html = `
                         <label>Title: <input name="edit_lt_${slide_id}_title_form" id="apply_lt_${slide_id}_title_form" value="${slide_data.title}"></label>
                         <label>Slide URL: <input name="apply_lt_${slide_id}_slide_url_form" id="apply_lt_${slide_id}_slide_url_form" value="${slide_data.url}"></label>
-                        <button type="button" onclick="onCancelEditSlide('${slide_id}')">キャンセル</button><button type="button" onclick="onCompleteEditSlide('${lt_id}', '${slide_id}')">編集を確定する</button>
+                        <button type="button" onclick="onCancelEditSlide('${slide_id}')">キャンセル</button><button type="button" onclick="onCompleteEditSlide('${lt_id}', '${slide_id}')">編集を確定する</button><br/><button class="remove-button" type="button" onclick="removeSlide('${lt_id}', '${slide_id}')">削除する</button>
                     `;
                 apply_form.innerHTML = apply_form_html;
                 slide.appendChild(apply_form);
             });
+        }
+
+        function removeSlide(lt_id, slide_id) {
+            if( confirm("Are you sure you want to remove this slide?") ) {
+                db.collection('lt').doc(lt_id).collection('slides').doc(slide_id).delete();
+            }
         }
 
         function onCompleteEditSlide(lt_id, slide_id) {
