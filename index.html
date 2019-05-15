@@ -86,6 +86,14 @@
             cursor: pointer;
         }
 
+        form input {
+            width: 50%;
+        }
+
+        form label {
+            display: block;
+        }
+
         section.lt {
             margin-bottom: 120px;
         }
@@ -374,9 +382,12 @@
             });
         }
 
-        function editSlides(lt_id, slide_id) {
+        function showEditButton() {
 
-            const slide_ref = db.collection('lt').doc(lt_id).collection("slides").doc(slide_id);
+        }
+
+        function editSlides(lt_id, slide_id) {
+            const slide_ref = db.collection('lt').doc(lt_id).collection('slides').doc(slide_id);
 
             slide_ref.get().then(slide_doc => {
                 const slide_data = slide_doc.data();
@@ -387,10 +398,21 @@
                 const apply_form_html = `
                         <label>Title: <input name="edit_lt_${slide_id}_title_form" id="apply_lt_${slide_id}_title_form" value="${slide_data.title}"></label>
                         <label>Slide URL: <input name="apply_lt_${slide_id}_slide_url_form" id="apply_lt_${slide_id}_slide_url_form" value="${slide_data.url}"></label>
-                        <button type="button" onclick="onCancelEditSlide('${slide_id}')">キャンセル</button><button type="button" onclick="onApplyPresenter('${slide_id}')">この内容で登録する</button>
+                        <button type="button" onclick="onCancelEditSlide('${slide_id}')">キャンセル</button><button type="button" onclick="onCompleteEditSlide('${lt_id}', '${slide_id}')">編集を確定する</button>
                     `;
                 apply_form.innerHTML = apply_form_html;
                 slide.appendChild(apply_form);
+            });
+        }
+
+        function onCompleteEditSlide(lt_id, slide_id) {
+            console.log(slide_id);
+            const title = document.getElementById(`apply_lt_${slide_id}_title_form`);
+            const url = document.getElementById(`apply_lt_${slide_id}_slide_url_form`);
+
+            const slide_ref = db.collection('lt').doc(lt_id).collection('slides').doc(slide_id);
+            slide_ref.set({ title: title.value, url: url.value }, { merge: true }).then(() => {
+                console.log('success');
             });
         }
 
