@@ -239,7 +239,7 @@
                 document.getElementById('firebaseui-auth-container').style.display = 'none';
             } else {
                 document.getElementById('firebaseui-auth-container').style.display = 'block';
-                for (const i = 0; i < apply_buttons.length; i++) {
+                for (let i = 0; i < apply_buttons.length; i++) {
                     apply_buttons[i].style.display = 'none';
                 }
             }
@@ -260,6 +260,7 @@
                         <ul>
                             <li>開催日: ${lt.date}</li>
                             <li>開催場所: ${lt.place}</li>
+                            <li style="display: none;" class="lt-edit-button" id="lt-edit-${lt_doc.id}-li"><button type="button" onclick="onEditLT('${lt_doc.id}')">LT情報を編集する</button></li>
                         </ul>
                         <h3>発表リスト</h3>
                         <ul id="${dom_slide_id}" class="slides">
@@ -280,7 +281,7 @@
 
                         firebase.auth().onAuthStateChanged(function (user) {
                             const edit_button_html = user ? `
-                                <button class="button-icon edit-button" onclick="editSlides('${lt_doc.id}', '${slide_doc.id}')">
+                                <button type="button" class="button-icon edit-button" onclick="editSlides('${lt_doc.id}', '${slide_doc.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>` : '';
 
@@ -314,12 +315,12 @@
                     firebase.auth().onAuthStateChanged(function (user) {
                         if (user) {
                             const buttons = document.getElementsByClassName('lt_apply_buttons');
-                            for (const i = 0; i < buttons.length; i++) {
+                            for (let i = 0; i < buttons.length; i++) {
                                 buttons[i].style.display = 'inline';
                             }
                         } else {
                             const buttons = document.getElementsByClassName('lt_apply_buttons');
-                            for (const i = 0; i < buttons.length; i++) {
+                            for (let i = 0; i < buttons.length; i++) {
                                 buttons[i].style.display = 'none';
                             }
                         }
@@ -413,8 +414,35 @@
             });
         }
 
-        function showEditButton() {
+        function onEditLT(lt_id) {
 
+            const lt_ref = db.collection('lt').doc(lt_id);
+            lt_ref.get().then(lt_doc => {
+                const lt_data = lt_doc.data();
+
+                const edit_lt_html = `
+                    <label>Title: <input id="lt_edit_${lt_id}_title" name="lt_edit_${lt_id}_title" value="${lt_data.title}"></label>
+                    <label>開催日: <input id="lt_edit_${lt_id}_date" name="lt_edit_${lt_id}_date" value="${lt_data.date}"></label>
+                    <label>開催場所: <input id="lt_edit_${lt_id}_place" name="lt_edit_${lt_id}_place" value="${lt_data.place}"></label>
+                    <button type="button" onclick="completeEditLT('${lt_id}')">編集を確定する</button>
+                `;
+
+                const li = document.getElementById(`lt-edit-${lt_doc.id}-li`);
+                const form = document.createElement("form");
+                form.setAttribute("id", `lt-edit-${lt_doc.id}-form`);
+                form.innerHTML = edit_lt_html;
+                
+                li.appendChild(form);
+            });
+        }
+
+        function completeEditLT(lt_id) {
+            console.log(lt_id);
+            const title = document.getElementById(`lt_edit_${lt_id}_title`).value;
+            const date = document.getElementById(`lt_edit_${lt_id}_date`).value;
+            const place = document.getElementById(`lt_edit_${lt_id}_place`).value;
+
+            db.collection('lt').doc(lt_id).set({title, date, place}, {merge: true});
         }
 
         function editSlides(lt_id, slide_id) {
@@ -474,13 +502,17 @@
                         <label>開催場所: <input id="create_lt_place" name="create_lt_place"></label>
                         <button type="button" onclick="createNewLT()">Create New LT</button>
                     </form>
-                `;
-
+                    `;
 
                     const lt_create_form_div = document.createElement("div");
                     lt_create_form_div.id = 'lt_create_form';
                     document.getElementById('LTs').prepend(lt_create_form_div);
                     document.getElementById('lt_create_form').innerHTML = create_lt_html;
+
+                    let lt_edit_buttons = document.getElementsByClassName('lt-edit-button');
+                    for(let i = 0; i < lt_edit_buttons.length; i++) {
+                        lt_edit_buttons[i].style.display = 'inline';
+                    }
                 }
             });
         }());
