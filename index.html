@@ -250,16 +250,17 @@
 
                     slides_snapshot.forEach(slide_doc => {
                         const slide = slide_doc.data();
+
                         const slide_html = `
-                            <li class="card">
-                                <a href="${slide.url}" class="whole_card_link">
+                            <li class="card" id="${slide_doc.id}">
                                 <section>
-                                    <h4 id="${slide_doc.id}_img"><span>${slide.title}</span></h4>
+                                    <a href="${slide.url}" class="whole_card_link">
+                                        <h4 id="${slide_doc.id}_img"><span>${slide.title}</span></h4>
+                                    </a>
                                     <div class="slide_info">
-                                        <img src="${slide.presenter.photoURL}" class="photo_url"> <p>${slide.presenter.displayName}</p>
+                                        <img src="${slide.presenter.photoURL}" class="photo_url"> <p>${slide.presenter.displayName}</p> <button onclick="editSlides('${lt_doc.id}', '${slide_doc.id}')">編集する</button>
                                     </div>
                                 </section>
-                                </a>
                             </li>
                         `;
 
@@ -371,6 +372,31 @@
                 place: document.getElementById('create_lt_place').value,
                 created_at: Date.now()
             });
+        }
+
+        function editSlides(lt_id, slide_id) {
+
+            const slide_ref = db.collection('lt').doc(lt_id).collection("slides").doc(slide_id);
+
+            slide_ref.get().then(slide_doc => {
+                const slide_data = slide_doc.data();
+
+                const slide = document.getElementById(slide_id);
+                const apply_form = document.createElement("form");
+                apply_form.setAttribute("id", `edit_lt_${slide_id}_form`);
+                const apply_form_html = `
+                        <label>Title: <input name="edit_lt_${slide_id}_title_form" id="apply_lt_${slide_id}_title_form" value="${slide_data.title}"></label>
+                        <label>Slide URL: <input name="apply_lt_${slide_id}_slide_url_form" id="apply_lt_${slide_id}_slide_url_form" value="${slide_data.url}"></label>
+                        <button type="button" onclick="onCancelEditSlide('${slide_id}')">キャンセル</button><button type="button" onclick="onApplyPresenter('${slide_id}')">この内容で登録する</button>
+                    `;
+                apply_form.innerHTML = apply_form_html;
+                slide.appendChild(apply_form);
+            });
+        }
+
+        function onCancelEditSlide(slide_id) {
+            const elm = document.getElementById(`edit_lt_${slide_id}_form`);
+            elm.parentNode.removeChild(elm);
         }
 
         // ref: https://byuzensen.com/javascript-konami-command
